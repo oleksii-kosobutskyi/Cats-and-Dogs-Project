@@ -1,5 +1,7 @@
+pip >= 19.0.0
 librosa
 numpy
+scikit-learn
 tensorflow
 keras
 h5py

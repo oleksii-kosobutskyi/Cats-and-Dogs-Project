@@ -1,31 +1,27 @@
-import librosa
-import numpy as np
+import sys
 from os import listdir
 from os.path import isfile, join
-from sklearn.preprocessing import LabelEncoder
-from sklearn import metrics
+
+import librosa
+import numpy as np
+from keras.layers import Dense, Dropout
 from keras.models import Sequential, load_model
-from keras.layers import Dense, Dropout, Activation, Flatten
-from keras.layers import Convolution2D, MaxPooling2D
-from keras.optimizers import Adam
-from keras.utils import np_utils, to_categorical
-import sys
+from keras.utils import to_categorical
 from playsound import playsound
 
-
-DATA_FOLDER  = "../input/audio-cats-and-dogs/cats_dogs/train/cat/"
+DATA_FOLDER = "../input/audio-cats-and-dogs/cats_dogs/train/cat/"
 
 
 def audio2array(file_name):
 
     # here kaiser_fast is a technique used for faster extraction
-    [data, sample_rate] = librosa.load(file_name, res_type='kaiser_fast') 
+    [data, sample_rate] = librosa.load(file_name, res_type='kaiser_fast')
 
     # we extract mfcc feature from data
     feature = np.mean(librosa.feature.mfcc(y=data, sr=sample_rate, n_mfcc=40), axis=1) #40 values
-    if ('cat' in file_name):
+    if ('cat_' in file_name):
         label = 0
-    elif ('dog' in file_name):
+    elif ('dog_' in file_name):
         label = 1
 
     return [feature, label]
@@ -45,8 +41,8 @@ def train():
             continue
         X = np.vstack([X,x]); Y = np.hstack([Y,y])
 
-    Y = to_categorical(Y-1, num_classes=2) # Convert class vector (integers) to binary class matrix
-    
+    Y = to_categorical(Y) # Convert class vector (integers) to binary class matrix
+
     # build model
     model = Sequential()
 
@@ -79,11 +75,12 @@ if __name__ == '__main__':
         # load test file
         file_name = sys.argv[1]
         [x, y] = audio2array(file_name)
+        y = 'cat' if y == 0 else 'dog'
 
         # evaluate loaded model on test data
-        probabilities = model.predict(x, batch_size=32)
-        label = np.argmax(probabilities)
+        output = np.argmax(model.predict(np.array([x]), batch_size=32))
+        output = 'cat' if output == 0 else 'dog'
 
         playsound(file_name)
 
-        print(f"I think it is a {label}.\nIt is {y} in fact.")
+        print(f"I think it is a {output}.\nIt is {y} in fact.")
