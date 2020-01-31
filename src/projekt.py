@@ -1,6 +1,7 @@
 import sys
 from os import listdir
 from os.path import isfile, join
+import random
 
 import librosa
 import numpy as np
@@ -9,7 +10,8 @@ from keras.models import Sequential, load_model
 from keras.utils import to_categorical
 from playsound import playsound
 
-DATA_FOLDER = "../input/audio-cats-and-dogs/cats_dogs/train/cat/"
+TRAIN_FOLDER = "../data/train/"
+TEST_FOLDER = "../data/test/"
 
 
 def audio2array(file_name):
@@ -23,6 +25,8 @@ def audio2array(file_name):
         label = 0
     elif ('dog_' in file_name):
         label = 1
+    else:
+        label = -1
 
     return [feature, label]
 
@@ -31,13 +35,13 @@ def train():
 
     # function to load files and extract features
     X = np.empty((0,40)); Y = np.empty(0)
-    file_names = [join(DATA_FOLDER, file) for file in listdir(DATA_FOLDER) if isfile(join(DATA_FOLDER, file))]
+    file_names = [join(TRAIN_FOLDER, file) for file in listdir(TRAIN_FOLDER) if isfile(join(TRAIN_FOLDER, file))]
     for file_name in file_names:
         # handle exception to check if there isn't a file which is corrupted
         try:
             [x, y] = audio2array(file_name)
         except Exception as exc:
-            print(f"Error encountered while parsing file\n{exc}")
+            print(f"Ups, cos sie spieprzylo.\n{exc}")
             continue
         X = np.vstack([X,x]); Y = np.hstack([Y,y])
 
@@ -62,25 +66,44 @@ def train():
     model.save("neural_net.h5")
 
 
-if __name__ == '__main__':
+#if __name__ == '__main__':
 
-    if (len(sys.argv) != 2):
-        print("Provide test file name and only that!")
-        sys.exit()
+if (len(sys.argv) != 2):
+    print("Podaj nazwe pliku i tylko to, ty frajerze!")
+    sys.exit()
+else:
+
+    string = input()
+    answer_list = ['Nie chce!', 'Popros ladniej.', 'Popros mnie jeszcze raz!']
+    while string != 'Szanowny programie, bardzo prosze przetestowac plik':
+        pos = random.randint(0,len(answer_list)-1)
+        print(answer_list[pos])
+        del answer_list[pos]
+        string = input()
+        
+    # load model
+    model = load_model('neural_net.h5')
+
+    # load test file
+    file_name = join(TEST_FOLDER, sys.argv[1])
+    [x, y] = audio2array(file_name)
+    if y == 0:
+        y = 'kocisko'
+    elif y == 1:
+        y = 'psisko'
     else:
+        y = 'kogo to obchodzi?'
 
-        # load model
-        model = load_model('neural_net.h5')
-
-        # load test file
-        file_name = sys.argv[1]
-        [x, y] = audio2array(file_name)
-        y = 'cat' if y == 0 else 'dog'
-
-        # evaluate loaded model on test data
+    # evaluate loaded model on test data
+    try:
         output = np.argmax(model.predict(np.array([x]), batch_size=32))
-        output = 'cat' if output == 0 else 'dog'
+    except Exception as exc:
+        print(f"Ups, cos sie spieprzylo.\n{exc}")
+    if output == 0:
+        output = 'kocisko'
+    elif output == 1:
+        output = 'psisko'
 
-        playsound(file_name)
+    playsound(file_name)
 
-        print(f"I think it is a {output}.\nIt is {y} in fact.")
+    print(f"Mysle ze to {output}.\nTak naprawde, jest to... {y}")
