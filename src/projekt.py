@@ -86,7 +86,10 @@ else:
 
     # load test file
     file_name = join(TEST_FOLDER, sys.argv[1])
-    [x, y] = audio2array(file_name)
+    try:
+        [x, y] = audio2array(file_name)
+    except Exception as exc:
+        print(f"Ups, cos sie spieprzylo.\n{exc}")
     if y == 0:
         y = 'kocisko'
     elif y == 1:
@@ -95,10 +98,7 @@ else:
         y = 'kogo to obchodzi?'
 
     # evaluate loaded model on test data
-    try:
-        output = np.argmax(model.predict(np.array([x]), batch_size=32))
-    except Exception as exc:
-        print(f"Ups, cos sie spieprzylo.\n{exc}")
+    output = np.argmax(model.predict(np.array([x]), batch_size=32))
     if output == 0:
         output = 'kocisko'
     elif output == 1:
